@@ -1,27 +1,31 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QDebug>
-#include <QMainWindow>
-#include <QtWebSockets/QWebSocket>
-#include <QtWebSockets/QWebSocketServer>
+#include <QWidget>
+#include <QPushButton>
+#include <QComboBox>
+#include <QLightDM/Greeter>
+#include <QLightDM/SessionsModel>
+#include <QLightDM/UsersModel>
 
-QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
-QT_END_NAMESPACE
-
-class MainWindow : public QMainWindow
+class MainWindow : public QWidget
 {
     Q_OBJECT
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    ~MainWindow();
+    bool connectToGreeter();
+
+private slots:
+    void handleAuthentication();
+    void handleAuthenticationResult();
 
 private:
-    Ui::MainWindow *ui;
+    QLightDM::Greeter m_greeter;
+    QLightDM::UsersModel m_usersModel;
+    QLightDM::SessionsModel m_sessionsModel;
+    QComboBox *m_userCombo;
+    QPushButton *m_authButton;
 };
 
 #endif // MAINWINDOW_H
