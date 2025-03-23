@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QWidget>
+#include <QLabel>
+#include <QVBoxLayout>
 #include <QPushButton>
 #include <QComboBox>
 #include <QLightDM/Greeter>
@@ -13,19 +15,24 @@ class MainWindow : public QWidget
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
-    bool connectToGreeter();
+    explicit MainWindow(QWidget *parent = nullptr);
+    void applyStyle();
 
 private slots:
-    void handleAuthentication();
+    void authenticateUser();
     void handleAuthenticationResult();
 
 private:
+    void setupUI();
+    void setupConnections();
+
     QLightDM::Greeter m_greeter;
     QLightDM::UsersModel m_usersModel;
     QLightDM::SessionsModel m_sessionsModel;
+
     QComboBox *m_userCombo;
     QPushButton *m_authButton;
+    QLabel *m_statusLabel;
 };
 
 #endif // MAINWINDOW_H

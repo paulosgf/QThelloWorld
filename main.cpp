@@ -1,5 +1,4 @@
 #include <QApplication>
-#include <QDebug>
 #include "mainwindow.h"
 
 int main(int argc, char *argv[])
@@ -7,11 +6,8 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     MainWindow window;
-    if (!window.connectToGreeter()) {
-        qCritical() << "Falha ao conectar ao LightDM";
-        return 1;
-    }
-
+    window.resize(800, 600);
     window.show();
+
     return app.exec();
 }
