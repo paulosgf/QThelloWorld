@@ -2,13 +2,13 @@
 #define MAINWINDOW_H
 
 #include <QWidget>
+#include <QLightDM/Greeter>
+#include <QLightDM/UsersModel>
+#include <QLightDM/SessionsModel>
+#include <QHBoxLayout>
+#include <QPushButton>
 #include <QLabel>
 #include <QVBoxLayout>
-#include <QPushButton>
-#include <QComboBox>
-#include <QLightDM/Greeter>
-#include <QLightDM/SessionsModel>
-#include <QLightDM/UsersModel>
 
 class MainWindow : public QWidget
 {
@@ -19,18 +19,19 @@ public:
     void applyStyle();
 
 private slots:
-    void authenticateUser();
+    void authenticateUser(const QString &username);
     void handleAuthenticationResult();
 
 private:
     void setupUI();
     void setupConnections();
+    void createUserBar();
 
     QLightDM::Greeter m_greeter;
     QLightDM::UsersModel m_usersModel;
     QLightDM::SessionsModel m_sessionsModel;
 
-    QComboBox *m_userCombo;
+    QWidget *m_userBar;
     QPushButton *m_authButton;
     QLabel *m_statusLabel;
 };
