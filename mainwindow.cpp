@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
 {
     setupUI();
-    applyStyle();
+    applyStyle(0.8); // Define a transparência (0.0 = totalmente transparente, 1.0 = opaco)
     setupConnections();
 }
 
@@ -34,6 +34,59 @@ void MainWindow::setupUI()
     layout->addWidget(m_userBar);
     layout->addWidget(m_authButton);
     layout->addWidget(m_statusLabel);
+}
+
+void MainWindow::applyStyle(float opacity)
+{
+    // Define a transparência da janela principal
+    this->setWindowOpacity(opacity);
+
+    // Estilo geral
+    QString style = QString(R"(
+        QWidget {
+            background-color: rgba(45, 45, 45, %1);
+            color: #ffffff;
+            font-size: 16px;
+        }
+
+        QComboBox {
+            min-width: 300px;
+            min-height: 50px;
+            padding: 10px;
+            border: 2px solid rgba(77, 77, 77, %1);
+            border-radius: 5px;
+            selection-background-color: rgba(64, 64, 64, %1);
+        }
+
+        QComboBox QAbstractItemView {
+            background-color: rgba(64, 64, 64, %1);
+            selection-background-color: rgba(80, 80, 80, %1);
+        }
+
+        QPushButton {
+            min-width: 200px;
+            min-height: 50px;
+            background-color: rgba(96, 96, 96, %1);
+            border: 2px solid rgba(77, 77, 77, %1);
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        QPushButton:hover {
+            background-color: rgba(112, 112, 112, %1);
+        }
+
+        QPushButton:pressed {
+            background-color: rgba(80, 80, 80, %1);
+        }
+
+        QLabel#statusLabel {
+            color: #ff4444;
+            font-size: 14px;
+        }
+    )").arg(opacity); // Aplica a transparência ao fundo dos widgets
+
+    this->setStyleSheet(style);
 }
 
 void MainWindow::createUserBar()
@@ -66,9 +119,9 @@ void MainWindow::createUserBar()
 
         // Ícone do usuário
         QLabel *iconLabel = new QLabel(userWidget);
-        QPixmap iconPixmap("../icons/avatar.png"); // Carrega o ícone
+        QPixmap iconPixmap("icons/avatar.png"); // Carrega o ícone
         if (iconPixmap.isNull()) {
-            qWarning() << "Ícone não encontrado! Verifique o caminho:" << "../icons/avatar.png";
+            qWarning() << "Ícone não encontrado! Verifique o caminho:" << "icons/avatar.png";
         } else {
             iconLabel->setPixmap(iconPixmap.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation)); // Redimensiona o ícone
         }
@@ -107,43 +160,6 @@ void MainWindow::createUserBar()
         // Adiciona o widget do usuário à barra
         userBarLayout->addWidget(userWidget);
     }
-}
-
-void MainWindow::applyStyle()
-{
-    // Estilo geral
-    this->setStyleSheet(R"(
-        QWidget {
-            background-color: #2d2d2d;
-            color: #ffffff;
-            font-size: 16px;
-        }
-
-        QPushButton {
-            min-width: 200px;
-            min-height: 50px;
-            background-color: #606060;
-            border: 2px solid #4d4d4d;
-            border-radius: 5px;
-            padding: 10px;
-        }
-
-        QPushButton:hover {
-            background-color: #707070;
-        }
-
-        QPushButton:pressed {
-            background-color: #505050;
-        }
-
-        QLabel#statusLabel {
-            color: #ff4444;
-            font-size: 14px;
-        }
-    )");
-
-    // Estilo específico para o label de status
-    m_statusLabel->setObjectName("statusLabel");
 }
 
 void MainWindow::setupConnections()
