@@ -16,7 +16,7 @@ class MainWindow : public QWidget
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    void applyStyle();
+    void applyStyle(float opacity = 0.9); // Chave de configuração de transparência
 
 private slots:
     void authenticateUser(const QString &username);
