@@ -3,6 +3,8 @@
 #include <QIcon>
 #include <QDebug>
 #include <QMessageBox>
+#include <QCheckBox>
+#include <QHBoxLayout>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -24,27 +26,36 @@ void MainWindow::setupUI()
     userBarLayout->setAlignment(Qt::AlignCenter);
     createUserBar();
 
-    // Stack para alternar entre seleção de usuário e senha
+    // Stack para autenticação
     m_authStack = new QStackedWidget(this);
 
-    // Widget inicial (seleção de usuário)
+    // Widget de seleção de usuário
     QWidget *userSelectWidget = new QWidget();
     QVBoxLayout *userSelectLayout = new QVBoxLayout(userSelectWidget);
-
     m_authButton = new QPushButton("Autenticar", this);
     userSelectLayout->addWidget(m_authButton);
 
-    // Widget para autenticação por senha
+    // Widget de senha
     QWidget *passwordWidget = new QWidget();
     QVBoxLayout *passwordLayout = new QVBoxLayout(passwordWidget);
+
+    // Campo de senha com opção de visualização
+    QWidget *passwordContainer = new QWidget();
+    QHBoxLayout *passwordHBox = new QHBoxLayout(passwordContainer);
+    passwordHBox->setContentsMargins(0, 0, 0, 0);
 
     m_passwordField = new QLineEdit(this);
     m_passwordField->setPlaceholderText("Digite sua senha");
     m_passwordField->setEchoMode(QLineEdit::Password);
 
+    QCheckBox *showPasswordCheck = new QCheckBox("Mostrar senha", this);
+
+    passwordHBox->addWidget(m_passwordField);
+    passwordHBox->addWidget(showPasswordCheck);
+
     QPushButton *submitButton = new QPushButton("Autenticar", this);
 
-    passwordLayout->addWidget(m_passwordField);
+    passwordLayout->addWidget(passwordContainer);
     passwordLayout->addWidget(submitButton);
 
     // Adiciona widgets ao stack
@@ -59,6 +70,11 @@ void MainWindow::setupUI()
     mainLayout->addWidget(m_userBar);
     mainLayout->addWidget(m_authStack);
     mainLayout->addWidget(m_statusLabel);
+
+    // Conexão do checkbox de mostrar senha
+    connect(showPasswordCheck, &QCheckBox::stateChanged, this, [this](int state){
+        m_passwordField->setEchoMode(state == Qt::Checked ? QLineEdit::Normal : QLineEdit::Password);
+    });
 }
 
 void MainWindow::applyStyle(float opacity)
@@ -73,7 +89,7 @@ void MainWindow::applyStyle(float opacity)
         }
 
         QLineEdit {
-            min-width: 300px;
+            min-width: 250px;
             min-height: 40px;
             padding: 10px;
             border: 2px solid rgba(77, 77, 77, %1);
@@ -100,9 +116,21 @@ void MainWindow::applyStyle(float opacity)
             background-color: rgba(80, 80, 80, %1);
         }
 
+        QCheckBox {
+            color: #ffffff;
+            spacing: 5px;
+            margin-left: 10px;
+        }
+
+        QCheckBox::indicator {
+            width: 20px;
+            height: 20px;
+        }
+
         QLabel#statusLabel {
             color: #ff4444;
             font-size: 14px;
+            margin-top: 15px;
         }
     )").arg(opacity);
 
@@ -126,17 +154,48 @@ void MainWindow::createUserBar()
         QString username = m_usersModel.data(m_usersModel.index(i, 0), QLightDM::UsersModel::NameRole).toString();
         QString realName = m_usersModel.data(m_usersModel.index(i, 0), QLightDM::UsersModel::RealNameRole).toString();
 
-        QPushButton *userButton = new QPushButton(m_userBar);
+        QWidget *userContainer = new QWidget(m_userBar);
+        QVBoxLayout *containerLayout = new QVBoxLayout(userContainer);
+        containerLayout->setAlignment(Qt::AlignCenter);
+        containerLayout->setContentsMargins(10, 10, 10, 10);
+
+        QPushButton *userButton = new QPushButton(userContainer);
         userButton->setIcon(QIcon("icons/avatar.png"));
+        userButton->setIconSize(QSize(64, 64));
         userButton->setText(realName.isEmpty() ? username : realName);
         userButton->setProperty("username", username);
 
-        connect(userButton, &QPushButton::clicked, [this, username]() {
-            m_selectedUser = username;
-            showPasswordField();
-        });
+        userButton->setStyleSheet(R"(
+            QPushButton {
+                border: none;
+                background: transparent;
+                color: white;
+                font-size: 14px;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                color: #00ff00;
+            }
+        )");
 
-        userBarLayout->addWidget(userButton);
+        QVBoxLayout *buttonLayout = new QVBoxLayout(userButton);
+        buttonLayout->setAlignment(Qt::AlignCenter);
+        buttonLayout->setSpacing(5);
+
+        containerLayout->addWidget(userButton);
+        userBarLayout->addWidget(userContainer);
+
+        connect(userButton, &QPushButton::clicked, [this, username, userContainer]() {
+            for(QWidget *w : m_userBar->findChildren<QWidget*>()) {
+                w->setStyleSheet(w->styleSheet().replace("border-color: #00ff00;", ""));
+            }
+            userContainer->setStyleSheet(
+                "background: rgba(80, 80, 80, 0.9);"
+                "border: 2px solid #00ff00;"
+                "border-radius: 10px;"
+                );
+            m_selectedUser = username;
+        });
     }
 }
 
@@ -154,7 +213,7 @@ void MainWindow::showPasswordField()
         m_statusLabel->show();
         return;
     }
-    m_authStack->setCurrentIndex(1); // Mostra campo de senha
+    m_authStack->setCurrentIndex(1);
     m_passwordField->setFocus();
 }
 
@@ -172,7 +231,6 @@ void MainWindow::authenticateUser()
         return;
     }
 
-    // Autenticação em duas etapas
     m_greeter.authenticate(m_selectedUser);
     m_greeter.respond(m_passwordField->text());
 }
