@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'mainwindow.ui'
 **
-** Created by: Qt User Interface Compiler version 5.15.3
+** Created by: Qt User Interface Compiler version 5.15.8
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -11,10 +11,8 @@
 
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
-#include <QtWidgets/QComboBox>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
-#include <QtWidgets/QPushButton>
 #include <QtWidgets/QStatusBar>
 #include <QtWidgets/QWidget>
 
@@ -24,8 +22,6 @@ class Ui_MainWindow
 {
 public:
     QWidget *centralwidget;
-    QComboBox *m_userCombo;
-    QPushButton *m_authButton;
     QMenuBar *menubar;
     QStatusBar *statusbar;
 
@@ -36,16 +32,10 @@ public:
         MainWindow->resize(1311, 966);
         centralwidget = new QWidget(MainWindow);
         centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
-        m_userCombo = new QComboBox(centralwidget);
-        m_userCombo->setObjectName(QString::fromUtf8("m_userCombo"));
-        m_userCombo->setGeometry(QRect(490, 370, 291, 25));
-        m_authButton = new QPushButton(centralwidget);
-        m_authButton->setObjectName(QString::fromUtf8("m_authButton"));
-        m_authButton->setGeometry(QRect(560, 430, 141, 25));
         MainWindow->setCentralWidget(centralwidget);
         menubar = new QMenuBar(MainWindow);
         menubar->setObjectName(QString::fromUtf8("menubar"));
-        menubar->setGeometry(QRect(0, 0, 1311, 22));
+        menubar->setGeometry(QRect(0, 0, 1311, 23));
         MainWindow->setMenuBar(menubar);
         statusbar = new QStatusBar(MainWindow);
         statusbar->setObjectName(QString::fromUtf8("statusbar"));
@@ -59,7 +49,6 @@ public:
     void retranslateUi(QMainWindow *MainWindow)
     {
         MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "MainWindow", nullptr));
-        m_authButton->setText(QCoreApplication::translate("MainWindow", "Autenticar", nullptr));
     } // retranslateUi
 
 };
