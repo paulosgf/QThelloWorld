@@ -10,7 +10,7 @@
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QLineEdit>
-#include <QStackedWidget>
+#include <QCheckBox>
 
 class MainWindow : public QWidget
 {
@@ -20,12 +20,12 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     void applyStyle(float opacity = 0.9);
 
-private slots:
+private slots: // Remova a declaração do showPasswordField daqui
     void authenticateUser();
     void handleAuthenticationResult();
-    void showPasswordField();
 
 private:
+    // ... mantenha apenas as declarações existentes
     void setupUI();
     void setupConnections();
     void createUserBar();
@@ -38,7 +38,6 @@ private:
     QPushButton *m_authButton;
     QLabel *m_statusLabel;
     QLineEdit *m_passwordField;
-    QStackedWidget *m_authStack;
     QString m_selectedUser;
 };
 
