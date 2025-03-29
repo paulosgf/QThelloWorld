@@ -9,6 +9,8 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QVBoxLayout>
+#include <QLineEdit>
+#include <QStackedWidget>
 
 class MainWindow : public QWidget
 {
@@ -16,11 +18,12 @@ class MainWindow : public QWidget
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
-    void applyStyle(float opacity = 0.9); // Chave de configuração de transparência
+    void applyStyle(float opacity = 0.9);
 
 private slots:
-    void authenticateUser(const QString &username);
+    void authenticateUser();
     void handleAuthenticationResult();
+    void showPasswordField();
 
 private:
     void setupUI();
@@ -34,6 +37,9 @@ private:
     QWidget *m_userBar;
     QPushButton *m_authButton;
     QLabel *m_statusLabel;
+    QLineEdit *m_passwordField;
+    QStackedWidget *m_authStack;
+    QString m_selectedUser;
 };
 
 #endif // MAINWINDOW_H
