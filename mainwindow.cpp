@@ -1,72 +1,36 @@
 #include "mainwindow.h"
+#include "ui_mainwindow.h"
 #include <QPropertyAnimation>
 #include <QIcon>
 #include <QDebug>
-#include <QMessageBox>
-#include <QCheckBox>
-#include <QHBoxLayout>
 
-MainWindow::MainWindow(QWidget *parent)
-    : QWidget(parent)
+MainWindow::MainWindow(QWidget *parent) :
+    QWidget(parent),
+    ui(new Ui::MainWindow)
 {
-    setupUI();
+    ui->setupUi(this);
+
+    // Configuração inicial
     applyStyle(0.8);
-    setupConnections();
+    setupDynamicUI();
+
+    // Conexões
+    connect(ui->showPasswordCheck, &QCheckBox::stateChanged, [this](int state){
+        ui->passwordField->setEchoMode(state == Qt::Checked ? QLineEdit::Normal : QLineEdit::Password);
+    });
+
+    connect(ui->authButton, &QPushButton::clicked, this, &MainWindow::authenticateUser);
+    connect(ui->passwordField, &QLineEdit::returnPressed, this, &MainWindow::authenticateUser);
+    connect(&m_greeter, &QLightDM::Greeter::authenticationComplete, this, &MainWindow::handleAuthenticationResult);
+
+    // Esconder componentes de autenticação inicialmente
+    ui->authContainer->hide();
+    ui->statusLabel->hide();
 }
 
-void MainWindow::setupUI()
+MainWindow::~MainWindow()
 {
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setAlignment(Qt::AlignCenter);
-
-    // Barra de usuários
-    m_userBar = new QWidget(this);
-    QHBoxLayout *userBarLayout = new QHBoxLayout(m_userBar);
-    userBarLayout->setSpacing(20);
-    userBarLayout->setAlignment(Qt::AlignCenter);
-    createUserBar();
-
-    // Container de autenticação
-    QWidget *authContainer = new QWidget(this);
-    QVBoxLayout *authLayout = new QVBoxLayout(authContainer);
-    authLayout->setAlignment(Qt::AlignCenter);
-
-    // Campo de senha
-    QWidget *passwordBox = new QWidget();
-    QHBoxLayout *passwordLayout = new QHBoxLayout(passwordBox);
-    passwordLayout->setContentsMargins(0, 0, 0, 0);
-
-    m_passwordField = new QLineEdit(this);
-    m_passwordField->setPlaceholderText("Digite sua senha");
-    m_passwordField->setEchoMode(QLineEdit::Password);
-    m_passwordField->hide(); // Inicialmente oculto
-
-    QCheckBox *showPasswordCheck = new QCheckBox("Mostrar senha", this);
-    showPasswordCheck->hide();
-
-    passwordLayout->addWidget(m_passwordField);
-    passwordLayout->addWidget(showPasswordCheck);
-
-    // Botão de autenticação
-    m_authButton = new QPushButton("Autenticar", this);
-    m_authButton->hide(); // Inicialmente oculto
-
-    authLayout->addWidget(passwordBox);
-    authLayout->addWidget(m_authButton);
-
-    // Label de status
-    m_statusLabel = new QLabel(this);
-    m_statusLabel->setAlignment(Qt::AlignCenter);
-    m_statusLabel->hide();
-
-    mainLayout->addWidget(m_userBar);
-    mainLayout->addWidget(authContainer);
-    mainLayout->addWidget(m_statusLabel);
-
-    // Conexão do checkbox
-    connect(showPasswordCheck, &QCheckBox::stateChanged, this, [this](int state){
-        m_passwordField->setEchoMode(state == Qt::Checked ? QLineEdit::Normal : QLineEdit::Password);
-    });
+    delete ui;
 }
 
 void MainWindow::applyStyle(float opacity)
@@ -124,11 +88,23 @@ void MainWindow::applyStyle(float opacity)
     this->setStyleSheet(style);
 }
 
+void MainWindow::setupDynamicUI()
+{
+    // Configurar a barra de usuários no container do .ui
+    QWidget *userBarContainer = ui->userBarContainer;
+    QHBoxLayout *userBarLayout = new QHBoxLayout(userBarContainer);
+    userBarLayout->setSpacing(20);
+    userBarLayout->setAlignment(Qt::AlignCenter);
+
+    createUserBar();
+}
+
 void MainWindow::createUserBar()
 {
-    QHBoxLayout *userBarLayout = qobject_cast<QHBoxLayout*>(m_userBar->layout());
+    QHBoxLayout *userBarLayout = qobject_cast<QHBoxLayout*>(ui->userBarContainer->layout());
     if (!userBarLayout) return;
 
+    // Limpar layout existente
     QLayoutItem *item;
     while ((item = userBarLayout->takeAt(0))) {
         if (item->widget()) item->widget()->deleteLater();
@@ -141,13 +117,13 @@ void MainWindow::createUserBar()
         QString username = m_usersModel.data(m_usersModel.index(i, 0), QLightDM::UsersModel::NameRole).toString();
         QString realName = m_usersModel.data(m_usersModel.index(i, 0), QLightDM::UsersModel::RealNameRole).toString();
 
-        QWidget *userContainer = new QWidget(m_userBar);
+        QWidget *userContainer = new QWidget(ui->userBarContainer);
         QVBoxLayout *containerLayout = new QVBoxLayout(userContainer);
         containerLayout->setAlignment(Qt::AlignCenter);
         containerLayout->setContentsMargins(10, 10, 10, 10);
 
         QPushButton *userButton = new QPushButton(userContainer);
-        userButton->setIcon(QIcon("icons/avatar.png"));
+        userButton->setIcon(QIcon(":/icons/avatar.png"));
         userButton->setIconSize(QSize(64, 64));
         userButton->setText(realName.isEmpty() ? username : realName);
         userButton->setProperty("username", username);
@@ -167,7 +143,7 @@ void MainWindow::createUserBar()
 
         connect(userButton, &QPushButton::clicked, [this, username, userContainer]() {
             // Reset selection
-            for(QWidget *w : m_userBar->findChildren<QWidget*>()) {
+            for(QWidget *w : ui->userBarContainer->findChildren<QWidget*>()) {
                 w->setStyleSheet(w->styleSheet().replace("border-color: #00ff00;", ""));
             }
 
@@ -180,10 +156,8 @@ void MainWindow::createUserBar()
 
             // Show auth components
             m_selectedUser = username;
-            m_passwordField->show();
-            m_passwordField->setFocus();
-            m_authButton->show();
-            m_authButton->parentWidget()->findChild<QCheckBox*>()->show();
+            ui->authContainer->show();
+            ui->passwordField->setFocus();
         });
 
         containerLayout->addWidget(userButton);
@@ -191,29 +165,22 @@ void MainWindow::createUserBar()
     }
 }
 
-void MainWindow::setupConnections()
-{
-    connect(m_authButton, &QPushButton::clicked, this, &MainWindow::authenticateUser);
-    connect(m_passwordField, &QLineEdit::returnPressed, this, &MainWindow::authenticateUser);
-    connect(&m_greeter, &QLightDM::Greeter::authenticationComplete, this, &MainWindow::handleAuthenticationResult);
-}
-
 void MainWindow::authenticateUser()
 {
     if (m_selectedUser.isEmpty()) {
-        m_statusLabel->setText("Nenhum usuário selecionado");
-        m_statusLabel->show();
+        ui->statusLabel->setText("Nenhum usuário selecionado");
+        ui->statusLabel->show();
         return;
     }
 
-    if (m_passwordField->text().isEmpty()) {
-        m_statusLabel->setText("Digite sua senha");
-        m_statusLabel->show();
+    if (ui->passwordField->text().isEmpty()) {
+        ui->statusLabel->setText("Digite sua senha");
+        ui->statusLabel->show();
         return;
     }
 
     m_greeter.authenticate(m_selectedUser);
-    m_greeter.respond(m_passwordField->text());
+    m_greeter.respond(ui->passwordField->text());
 }
 
 void MainWindow::handleAuthenticationResult()
@@ -225,8 +192,8 @@ void MainWindow::handleAuthenticationResult()
             m_greeter.startSessionSync(sessionKey);
         }
     } else {
-        m_statusLabel->setText("Autenticação falhou");
-        m_statusLabel->show();
-        m_passwordField->clear();
+        ui->statusLabel->setText("Autenticação falhou");
+        ui->statusLabel->show();
+        ui->passwordField->clear();
     }
 }

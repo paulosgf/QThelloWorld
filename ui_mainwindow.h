@@ -11,9 +11,11 @@
 
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
-#include <QtWidgets/QMainWindow>
-#include <QtWidgets/QMenuBar>
-#include <QtWidgets/QStatusBar>
+#include <QtWidgets/QCheckBox>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QLineEdit>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 
 QT_BEGIN_NAMESPACE
@@ -21,34 +23,74 @@ QT_BEGIN_NAMESPACE
 class Ui_MainWindow
 {
 public:
-    QWidget *centralwidget;
-    QMenuBar *menubar;
-    QStatusBar *statusbar;
+    QVBoxLayout *verticalLayout;
+    QWidget *userBarContainer;
+    QWidget *authContainer;
+    QVBoxLayout *verticalLayout_2;
+    QLineEdit *passwordField;
+    QCheckBox *showPasswordCheck;
+    QPushButton *authButton;
+    QLabel *statusLabel;
 
-    void setupUi(QMainWindow *MainWindow)
+    void setupUi(QWidget *MainWindow)
     {
         if (MainWindow->objectName().isEmpty())
             MainWindow->setObjectName(QString::fromUtf8("MainWindow"));
-        MainWindow->resize(1311, 966);
-        centralwidget = new QWidget(MainWindow);
-        centralwidget->setObjectName(QString::fromUtf8("centralwidget"));
-        MainWindow->setCentralWidget(centralwidget);
-        menubar = new QMenuBar(MainWindow);
-        menubar->setObjectName(QString::fromUtf8("menubar"));
-        menubar->setGeometry(QRect(0, 0, 1311, 23));
-        MainWindow->setMenuBar(menubar);
-        statusbar = new QStatusBar(MainWindow);
-        statusbar->setObjectName(QString::fromUtf8("statusbar"));
-        MainWindow->setStatusBar(statusbar);
+        MainWindow->resize(800, 600);
+        verticalLayout = new QVBoxLayout(MainWindow);
+        verticalLayout->setObjectName(QString::fromUtf8("verticalLayout"));
+        userBarContainer = new QWidget(MainWindow);
+        userBarContainer->setObjectName(QString::fromUtf8("userBarContainer"));
+        QSizePolicy sizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+        sizePolicy.setHorizontalStretch(0);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(userBarContainer->sizePolicy().hasHeightForWidth());
+        userBarContainer->setSizePolicy(sizePolicy);
+
+        verticalLayout->addWidget(userBarContainer);
+
+        authContainer = new QWidget(MainWindow);
+        authContainer->setObjectName(QString::fromUtf8("authContainer"));
+        verticalLayout_2 = new QVBoxLayout(authContainer);
+        verticalLayout_2->setObjectName(QString::fromUtf8("verticalLayout_2"));
+        passwordField = new QLineEdit(authContainer);
+        passwordField->setObjectName(QString::fromUtf8("passwordField"));
+        passwordField->setEchoMode(QLineEdit::Password);
+
+        verticalLayout_2->addWidget(passwordField);
+
+        showPasswordCheck = new QCheckBox(authContainer);
+        showPasswordCheck->setObjectName(QString::fromUtf8("showPasswordCheck"));
+
+        verticalLayout_2->addWidget(showPasswordCheck);
+
+        authButton = new QPushButton(authContainer);
+        authButton->setObjectName(QString::fromUtf8("authButton"));
+
+        verticalLayout_2->addWidget(authButton);
+
+
+        verticalLayout->addWidget(authContainer);
+
+        statusLabel = new QLabel(MainWindow);
+        statusLabel->setObjectName(QString::fromUtf8("statusLabel"));
+        statusLabel->setAlignment(Qt::AlignCenter);
+
+        verticalLayout->addWidget(statusLabel);
+
 
         retranslateUi(MainWindow);
 
         QMetaObject::connectSlotsByName(MainWindow);
     } // setupUi
 
-    void retranslateUi(QMainWindow *MainWindow)
+    void retranslateUi(QWidget *MainWindow)
     {
-        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "MainWindow", nullptr));
+        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "LightDM Greeter", nullptr));
+        passwordField->setPlaceholderText(QCoreApplication::translate("MainWindow", "Digite sua senha", nullptr));
+        showPasswordCheck->setText(QCoreApplication::translate("MainWindow", "Mostrar senha", nullptr));
+        authButton->setText(QCoreApplication::translate("MainWindow", "Autenticar", nullptr));
+        statusLabel->setText(QString());
     } // retranslateUi
 
 };
