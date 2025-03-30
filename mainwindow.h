@@ -5,12 +5,10 @@
 #include <QLightDM/Greeter>
 #include <QLightDM/UsersModel>
 #include <QLightDM/SessionsModel>
-#include <QHBoxLayout>
-#include <QPushButton>
-#include <QLabel>
-#include <QVBoxLayout>
-#include <QLineEdit>
-#include <QCheckBox>
+
+namespace Ui {
+class MainWindow;
+}
 
 class MainWindow : public QWidget
 {
@@ -18,26 +16,21 @@ class MainWindow : public QWidget
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
     void applyStyle(float opacity = 0.9);
 
-private slots: // Remova a declaração do showPasswordField daqui
+private slots:
     void authenticateUser();
     void handleAuthenticationResult();
 
 private:
-    // ... mantenha apenas as declarações existentes
-    void setupUI();
-    void setupConnections();
+    void setupDynamicUI();
     void createUserBar();
 
+    Ui::MainWindow *ui;
     QLightDM::Greeter m_greeter;
     QLightDM::UsersModel m_usersModel;
     QLightDM::SessionsModel m_sessionsModel;
-
-    QWidget *m_userBar;
-    QPushButton *m_authButton;
-    QLabel *m_statusLabel;
-    QLineEdit *m_passwordField;
     QString m_selectedUser;
 };
 
