@@ -1,7 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QWidget>
+#include <QMainWindow>  // <<< trocado de QWidget para QMainWindow
 #include <QLightDM/Greeter>
 #include <QLightDM/UsersModel>
 #include <QLightDM/SessionsModel>
@@ -10,7 +10,7 @@ namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QWidget
+class MainWindow : public QMainWindow  // <<< Aqui está o ponto crítico
 {
     Q_OBJECT
 

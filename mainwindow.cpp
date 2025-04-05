@@ -3,9 +3,10 @@
 #include <QPropertyAnimation>
 #include <QIcon>
 #include <QDebug>
+#include <QSizePolicy>
 
 MainWindow::MainWindow(QWidget *parent) :
-    QWidget(parent),
+    QMainWindow(parent), // <<< Corrigido aqui!
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -33,6 +34,17 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+/*
+void MainWindow::setupResponsiveLayout()
+{
+    // Se ainda quiser configurar espaçamento manualmente:
+    QVBoxLayout *layout = qobject_cast<QVBoxLayout*>(ui->centralwidget->layout());
+    if (layout) {
+        layout->setContentsMargins(10, 10, 10, 10);
+        layout->setSpacing(15);
+    }
+}
+*/
 void MainWindow::applyStyle(float opacity)
 {
     this->setWindowOpacity(opacity);
@@ -90,11 +102,13 @@ void MainWindow::applyStyle(float opacity)
 
 void MainWindow::setupDynamicUI()
 {
-    // Configurar a barra de usuários no container do .ui
     QWidget *userBarContainer = ui->userBarContainer;
-    QHBoxLayout *userBarLayout = new QHBoxLayout(userBarContainer);
-    userBarLayout->setSpacing(20);
-    userBarLayout->setAlignment(Qt::AlignCenter);
+
+    if (!userBarContainer->layout()) {
+        QHBoxLayout *userBarLayout = new QHBoxLayout(userBarContainer);
+        userBarLayout->setContentsMargins(0, 0, 0, 0);
+        userBarLayout->setSpacing(20);
+    }
 
     createUserBar();
 }
@@ -123,7 +137,7 @@ void MainWindow::createUserBar()
         containerLayout->setContentsMargins(10, 10, 10, 10);
 
         QPushButton *userButton = new QPushButton(userContainer);
-        userButton->setIcon(QIcon(":/icons/avatar.png"));
+        userButton->setIcon(QIcon("icons/avatar.png"));
         userButton->setIconSize(QSize(64, 64));
         userButton->setText(realName.isEmpty() ? username : realName);
         userButton->setProperty("username", username);
@@ -154,7 +168,6 @@ void MainWindow::createUserBar()
                 "border-radius: 10px;"
                 );
 
-            // Show auth components
             m_selectedUser = username;
             ui->authContainer->show();
             ui->passwordField->setFocus();
