@@ -13,8 +13,7 @@
   <property name="windowTitle">
    <string>LightDM Greeter</string>
   </property>
-
-  <widget class="QWidget" name="centralwidget"> 
+  <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QWidget" name="userBarContainer" native="true">
@@ -101,9 +100,7 @@
     </item>
    </layout>
   </widget>
-
- </widget> <!-- Fecha o QMainWindow -->
-
+ </widget>
  <resources/>
  <connections/>
 </ui>

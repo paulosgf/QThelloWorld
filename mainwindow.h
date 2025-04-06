@@ -1,23 +1,23 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>  // <<< trocado de QWidget para QMainWindow
 #include <QLightDM/Greeter>
-#include <QLightDM/UsersModel>
 #include <QLightDM/SessionsModel>
+#include <QLightDM/UsersModel>
+#include <QMainWindow> // <<< trocado de QWidget para QMainWindow
 
 namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QMainWindow  // <<< Aqui está o ponto crítico
+class MainWindow : public QMainWindow // <<< Aqui está o ponto crítico
 {
     Q_OBJECT
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    void applyStyle(float opacity = 0.9);
+//    void applyStyle(float opacity = 0.9);
 
 private slots:
     void authenticateUser();
