@@ -9,7 +9,6 @@ int main(int argc, char *argv[])
     window.resize(800, 600);
     window.show();
 
-    // Aplica opacidade e estilo diretamente aqui
     window.setWindowOpacity(0.6);
 
     QString style = QString(R"(

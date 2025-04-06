@@ -4,6 +4,7 @@
 #include <QPropertyAnimation>
 #include <QSizePolicy>
 #include "ui_mainwindow.h"
+#include <QTimer>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -13,7 +14,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     // Configuração inicial
- //   applyStyle(0.6);
     setupDynamicUI();
 
     // Conexões
@@ -24,6 +24,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->authButton, &QPushButton::clicked, this, &MainWindow::authenticateUser);
     connect(ui->passwordField, &QLineEdit::returnPressed, this, &MainWindow::authenticateUser);
+
+    // Tenta conectar
+    if (!m_greeter.connectToDaemonSync()) {
+        qCritical() << "Falha ao iniciar conexão com LightDM";
+        QTimer::singleShot(0, qApp, &QCoreApplication::quit);
+    }
     connect(&m_greeter,
             &QLightDM::Greeter::authenticationComplete,
             this,
@@ -122,6 +128,11 @@ void MainWindow::createUserBar()
 
 void MainWindow::authenticateUser()
 {
+    if (!m_greeter.property("connected").toBool()) {
+        qWarning() << "Greeter não conectado - Estado atual:" << m_greeter.property("connected");
+        return;
+    }
+
     if (m_selectedUser.isEmpty()) {
         ui->statusLabel->setText("Nenhum usuário selecionado");
         ui->statusLabel->show();
@@ -140,16 +151,14 @@ void MainWindow::authenticateUser()
 
 void MainWindow::handleAuthenticationResult()
 {
-    if (m_greeter.isAuthenticated()) {
-        QModelIndex sessionIndex = m_sessionsModel.index(0, 0);
-        if (sessionIndex.isValid()) {
-            QString sessionKey
-                = m_sessionsModel.data(sessionIndex, QLightDM::SessionsModel::KeyRole).toString();
-            m_greeter.startSessionSync(sessionKey);
-        }
+    // Verificar sucesso usando a API disponível
+    if (m_greeter.authenticationUser() == m_selectedUser &&
+        m_greeter.isAuthenticated()) {
+        // Autenticação bem-sucedida
     } else {
-        ui->statusLabel->setText("Autenticação falhou");
+        // Obter mensagem de erro alternativa
+        QString error = m_greeter.property("authenticationError").toString();
+        ui->statusLabel->setText(error.isEmpty() ? "Erro desconhecido" : error);
         ui->statusLabel->show();
-        ui->passwordField->clear();
     }
 }

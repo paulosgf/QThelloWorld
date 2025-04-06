@@ -4,20 +4,19 @@
 #include <QLightDM/Greeter>
 #include <QLightDM/SessionsModel>
 #include <QLightDM/UsersModel>
-#include <QMainWindow> // <<< trocado de QWidget para QMainWindow
+#include <QMainWindow>
 
 namespace Ui {
 class MainWindow;
 }
 
-class MainWindow : public QMainWindow // <<< Aqui está o ponto crítico
+class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-//    void applyStyle(float opacity = 0.9);
 
 private slots:
     void authenticateUser();
