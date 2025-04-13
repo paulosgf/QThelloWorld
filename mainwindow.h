@@ -15,16 +15,23 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    QString m_lastError; // Novo membro para armazenar erros
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
+    void onAuthenticationComplete();
+    void onShowPrompt(QString text, QLightDM::Greeter::PromptType type);
+    void onShowMessage(QString text, QLightDM::Greeter::MessageType type);
     void authenticateUser();
-    void handleAuthenticationResult();
+//    void handleAuthenticationResult();
 
 private:
     void setupDynamicUI();
     void createUserBar();
+    void connectToLightDM();
+    bool m_connected = false;
+    bool m_authenticating = false;
 
     Ui::MainWindow *ui;
     QLightDM::Greeter m_greeter;

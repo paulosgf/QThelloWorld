@@ -83,6 +83,7 @@ public:
 
         verticalLayout_2->addWidget(authButton);
 
+
         verticalLayout->addWidget(authContainer);
 
         statusLabel = new QLabel(centralwidget);
@@ -100,20 +101,17 @@ public:
 
     void retranslateUi(QMainWindow *MainWindow)
     {
-        MainWindow->setWindowTitle(
-            QCoreApplication::translate("MainWindow", "LightDM Greeter", nullptr));
-        passwordField->setPlaceholderText(
-            QCoreApplication::translate("MainWindow", "Digite sua senha", nullptr));
-        showPasswordCheck->setText(
-            QCoreApplication::translate("MainWindow", "Mostrar senha", nullptr));
+        MainWindow->setWindowTitle(QCoreApplication::translate("MainWindow", "LightDM Greeter", nullptr));
+        passwordField->setPlaceholderText(QCoreApplication::translate("MainWindow", "Digite sua senha", nullptr));
+        showPasswordCheck->setText(QCoreApplication::translate("MainWindow", "Mostrar senha", nullptr));
         authButton->setText(QCoreApplication::translate("MainWindow", "Autenticar", nullptr));
         statusLabel->setText(QString());
     } // retranslateUi
+
 };
 
 namespace Ui {
-class MainWindow : public Ui_MainWindow
-{};
+    class MainWindow: public Ui_MainWindow {};
 } // namespace Ui
 
 QT_END_NAMESPACE

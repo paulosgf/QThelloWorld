@@ -5,35 +5,36 @@
 #include <QSizePolicy>
 #include "ui_mainwindow.h"
 #include <QTimer>
+#define LIGHTDM_DEBUG 1
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , // <<< Corrigido aqui!
-    ui(new Ui::MainWindow)
+    , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-    // Configuração inicial
-    setupDynamicUI();
+    // Debug
+    qputenv("LIGHTDM_TEST_MODE", "1");
 
-    // Conexões
-    connect(ui->showPasswordCheck, &QCheckBox::stateChanged, [this](int state) {
-        ui->passwordField->setEchoMode(state == Qt::Checked ? QLineEdit::Normal
-                                                            : QLineEdit::Password);
+    // Conexão dos sinais
+    connect(&m_greeter, &QLightDM::Greeter::showPrompt,
+            this, &MainWindow::onShowPrompt);
+    connect(&m_greeter, &QLightDM::Greeter::showMessage,
+            this, &MainWindow::onShowMessage);
+    connect(&m_greeter, &QLightDM::Greeter::authenticationComplete,
+            this, &MainWindow::onAuthenticationComplete);
+    // Conexão corrigida para o checkbox
+    connect(ui->showPasswordCheck, &QCheckBox::toggled, [this](bool checked) {
+        ui->passwordField->setEchoMode(checked ? QLineEdit::Normal : QLineEdit::Password);
+
+        // Atualização visual imediata
+        ui->passwordField->repaint();
+        QApplication::processEvents();
     });
 
-    connect(ui->authButton, &QPushButton::clicked, this, &MainWindow::authenticateUser);
-    connect(ui->passwordField, &QLineEdit::returnPressed, this, &MainWindow::authenticateUser);
-
-    // Tenta conectar
-    if (!m_greeter.connectToDaemonSync()) {
-        qCritical() << "Falha ao iniciar conexão com LightDM";
-        QTimer::singleShot(0, qApp, &QCoreApplication::quit);
-    }
-    connect(&m_greeter,
-            &QLightDM::Greeter::authenticationComplete,
-            this,
-            &MainWindow::handleAuthenticationResult);
+    connectToLightDM();
+    setupDynamicUI();
 
     // Esconder componentes de autenticação inicialmente
     ui->authContainer->hide();
@@ -43,6 +44,93 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::onShowMessage(QString text, QLightDM::Greeter::MessageType type)
+{
+    qDebug() << "Mensagem do LightDM:" << text << "Tipo:" << type;
+
+    // Armazena apenas mensagens de erro
+    if (type == QLightDM::Greeter::MessageTypeError) {
+        m_lastError = text;
+        ui->statusLabel->setText(text);
+        ui->statusLabel->show();
+    }
+}
+
+void MainWindow::connectToLightDM()
+{
+    // Implementação equivalente a lightdm_greeter_connect_to_daemon_sync()
+    QEventLoop loop;
+    QTimer::singleShot(3000, &loop, &QEventLoop::quit); // Timeout de 3s
+
+    // Tenta conexão periodicamente
+    QTimer connectTimer;
+    connect(&connectTimer, &QTimer::timeout, [this](){
+        if (m_greeter.connectSync()) {
+            m_connected = true;
+            qDebug() << "Conectado ao LightDM!";
+            QCoreApplication::instance()->quit();
+        }
+    });
+
+    connectTimer.start(100);
+    loop.exec();
+
+    if (!m_connected) {
+        qFatal("Falha na conexão com o LightDM daemon");
+    }
+}
+
+void MainWindow::onShowPrompt(QString text, QLightDM::Greeter::PromptType type)
+{
+    // Implementação de show_prompt_cb
+    if (type == QLightDM::Greeter::PromptTypeSecret) {
+        m_greeter.respond(ui->passwordField->text());
+    }
+}
+
+void MainWindow::onAuthenticationComplete()
+{
+    if (m_greeter.isAuthenticated()) {
+        qDebug() << "Tentando iniciar sessão...";
+
+        // Verifica sessões disponíveis
+        if (m_sessionsModel.rowCount(QModelIndex()) == 0) {
+            qCritical() << "Nenhuma sessão disponível!";
+            return;
+        }
+
+        // Obtém a sessão padrão de forma segura
+        QModelIndex sessionIndex = m_sessionsModel.index(0, 0);
+        QString sessionKey = m_sessionsModel.data(
+                                                sessionIndex,
+                                                QLightDM::SessionsModel::KeyRole
+                                                ).toString();
+
+        qDebug() << "Sessão selecionada:" << sessionKey;
+        // Força a inicialização do ambiente
+        qputenv("XDG_RUNTIME_DIR", "/run/user/0");  // Correção para o erro do log
+        qputenv("DBUS_SESSION_BUS_ADDRESS", qgetenv("DBUS_SESSION_BUS_ADDRESS"));
+
+        // Inicia a sessão de forma assíncrona
+        QTimer::singleShot(0, [this, sessionKey]() {
+            if (m_greeter.startSessionSync(sessionKey)) {
+                qDebug() << "Sessão iniciada com sucesso!";
+                QCoreApplication::exit(0);  // Fecha o greeter
+            } else {
+                qCritical() << "Falha ao iniciar sessão. Código do erro:"
+                            << m_greeter.property("authenticationErrorCode").toInt();
+                            ui->statusLabel->setText("Erro ao iniciar ambiente gráfico");
+            }
+        });
+    } else {
+        QString error = m_lastError.isEmpty() ? "Autenticação falhou" : m_lastError;
+        ui->statusLabel->setText(error);
+        m_lastError.clear();
+    }
+
+    ui->passwordField->clear();
 }
 
 void MainWindow::setupDynamicUI()
@@ -128,37 +216,12 @@ void MainWindow::createUserBar()
 
 void MainWindow::authenticateUser()
 {
-    if (!m_greeter.property("connected").toBool()) {
-        qWarning() << "Greeter não conectado - Estado atual:" << m_greeter.property("connected");
-        return;
-    }
+    if (!m_connected || m_authenticating) return;
 
-    if (m_selectedUser.isEmpty()) {
-        ui->statusLabel->setText("Nenhum usuário selecionado");
-        ui->statusLabel->show();
-        return;
-    }
-
-    if (ui->passwordField->text().isEmpty()) {
-        ui->statusLabel->setText("Digite sua senha");
-        ui->statusLabel->show();
-        return;
-    }
-
+    // Implementação de lightdm_greeter_authenticate()
+    m_authenticating = true;
     m_greeter.authenticate(m_selectedUser);
-    m_greeter.respond(ui->passwordField->text());
 }
 
-void MainWindow::handleAuthenticationResult()
-{
-    // Verificar sucesso usando a API disponível
-    if (m_greeter.authenticationUser() == m_selectedUser &&
-        m_greeter.isAuthenticated()) {
-        // Autenticação bem-sucedida
-    } else {
-        // Obter mensagem de erro alternativa
-        QString error = m_greeter.property("authenticationError").toString();
-        ui->statusLabel->setText(error.isEmpty() ? "Erro desconhecido" : error);
-        ui->statusLabel->show();
-    }
-}
+
+
