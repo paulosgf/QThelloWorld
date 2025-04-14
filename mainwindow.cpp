@@ -5,6 +5,7 @@
 #include <QSizePolicy>
 #include "ui_mainwindow.h"
 #include <QTimer>
+#include <QDBusConnection>
 #define LIGHTDM_DEBUG 1
 
 
@@ -93,44 +94,75 @@ void MainWindow::onShowPrompt(QString text, QLightDM::Greeter::PromptType type)
 void MainWindow::onAuthenticationComplete()
 {
     if (m_greeter.isAuthenticated()) {
-        qDebug() << "Tentando iniciar sessão...";
+        qDebug() << "Autenticação bem-sucedida. Tentando iniciar sessão...";
 
         // Verifica sessões disponíveis
         if (m_sessionsModel.rowCount(QModelIndex()) == 0) {
             qCritical() << "Nenhuma sessão disponível!";
+            ui->statusLabel->setText("Erro: Nenhuma sessão disponível");
+            ui->statusLabel->show();
             return;
         }
 
-        // Obtém a sessão padrão de forma segura
-        QModelIndex sessionIndex = m_sessionsModel.index(0, 0);
-        QString sessionKey = m_sessionsModel.data(
-                                                sessionIndex,
-                                                QLightDM::SessionsModel::KeyRole
-                                                ).toString();
+        // Obtém a sessão padrão ou a sessão xubuntu (conforme visto nos logs)
+        QString sessionKey = "xubuntu"; // Default para xubuntu baseado nos logs
 
-        qDebug() << "Sessão selecionada:" << sessionKey;
-        // Força a inicialização do ambiente
-        qputenv("XDG_RUNTIME_DIR", "/run/user/0");  // Correção para o erro do log
-        qputenv("DBUS_SESSION_BUS_ADDRESS", qgetenv("DBUS_SESSION_BUS_ADDRESS"));
+        // Itera através das sessões disponíveis para encontrar a sessão xubuntu
+        for (int i = 0; i < m_sessionsModel.rowCount(QModelIndex()); i++) {
+            QModelIndex idx = m_sessionsModel.index(i, 0);
+            QString key = m_sessionsModel.data(idx, QLightDM::SessionsModel::KeyRole).toString();
+            qDebug() << "Sessão disponível:" << key;
 
-        // Inicia a sessão de forma assíncrona
-        QTimer::singleShot(0, [this, sessionKey]() {
-            if (m_greeter.startSessionSync(sessionKey)) {
-                qDebug() << "Sessão iniciada com sucesso!";
-                QCoreApplication::exit(0);  // Fecha o greeter
-            } else {
-                qCritical() << "Falha ao iniciar sessão. Código do erro:"
-                            << m_greeter.property("authenticationErrorCode").toInt();
-                            ui->statusLabel->setText("Erro ao iniciar ambiente gráfico");
+            if (key == "xubuntu") {
+                sessionKey = key;
+                break;
             }
-        });
+        }
+
+        qDebug() << "Iniciando sessão:" << sessionKey;
+
+        // Define variáveis de ambiente cruciais
+        qputenv("XDG_RUNTIME_DIR", "/run/user/1000"); // Ajustado para usar o UID do usuário
+        qputenv("DBUS_SESSION_BUS_ADDRESS", "unix:path=/run/user/1000/bus");
+
+        // Garante que estamos desconectando do servidor X atual
+        // para permitir que a sessão do usuário assuma o controle
+        QDBusConnection::sessionBus().disconnectFromBus(QDBusConnection::sessionBus().name());
+
+        // Limpa a tela antes de iniciar a sessão
+        this->hide();
+        QApplication::processEvents();
+
+        // Inicia a sessão de maneira robusta
+        if (m_greeter.startSessionSync(sessionKey)) {
+            qDebug() << "Comando de iniciar sessão enviado com sucesso!";
+            // O greeter será encerrado pelo LightDM após startSessionSync ser bem-sucedido
+            QCoreApplication::quit();
+        } else {
+            qCritical() << "Falha ao iniciar sessão:" << sessionKey;
+
+            // Verifica se há informações adicionais de erro
+            QVariant error = m_greeter.property("authenticationError");
+            if (error.isValid()) {
+                qCritical() << "Código de erro:" << error.toInt();
+            }
+
+            ui->statusLabel->setText("Falha ao iniciar sessão");
+            ui->statusLabel->show();
+            this->show(); // Mostrar novamente já que houve erro
+        }
     } else {
         QString error = m_lastError.isEmpty() ? "Autenticação falhou" : m_lastError;
         ui->statusLabel->setText(error);
+        ui->statusLabel->show();
         m_lastError.clear();
+
+        // Limpa a senha e redefine status
+        ui->passwordField->clear();
+        ui->passwordField->setFocus();
     }
 
-    ui->passwordField->clear();
+    m_authenticating = false;
 }
 
 void MainWindow::setupDynamicUI()
@@ -216,11 +248,28 @@ void MainWindow::createUserBar()
 
 void MainWindow::authenticateUser()
 {
-    if (!m_connected || m_authenticating) return;
+    if (!m_connected || m_authenticating) {
+        return;
+    }
 
-    // Implementação de lightdm_greeter_authenticate()
+    if (m_selectedUser.isEmpty()) {
+        ui->statusLabel->setText("Nenhum usuário selecionado");
+        ui->statusLabel->show();
+        return;
+    }
+
+    if (ui->passwordField->text().isEmpty()) {
+        ui->statusLabel->setText("Digite sua senha");
+        ui->statusLabel->show();
+        return;
+    }
+
     m_authenticating = true;
+    ui->statusLabel->hide();
+
+    qDebug() << "Iniciando autenticação para usuário:" << m_selectedUser;
     m_greeter.authenticate(m_selectedUser);
+   m_greeter.authenticate(m_selectedUser);
 }
 
 
