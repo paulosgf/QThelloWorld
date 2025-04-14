@@ -24,7 +24,6 @@ private slots:
     void onShowPrompt(QString text, QLightDM::Greeter::PromptType type);
     void onShowMessage(QString text, QLightDM::Greeter::MessageType type);
     void authenticateUser();
-//    void handleAuthenticationResult();
 
 private:
     void setupDynamicUI();
