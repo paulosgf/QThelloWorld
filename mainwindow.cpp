@@ -121,9 +121,54 @@ void MainWindow::onAuthenticationComplete()
 
         qDebug() << "Iniciando sessão:" << sessionKey;
 
-        // Define variáveis de ambiente cruciais
-        qputenv("XDG_RUNTIME_DIR", "/run/user/1000"); // Ajustado para usar o UID do usuário
-        qputenv("DBUS_SESSION_BUS_ADDRESS", "unix:path=/run/user/1000/bus");
+        // Obtém o UID do usuário autenticado
+        uid_t uid = 1000; // Default para usuário regular
+        QDBusInterface accountsInterface("org.freedesktop.Accounts",
+                                        "/org/freedesktop/Accounts",
+                                        "org.freedesktop.Accounts",
+                                        QDBusConnection::systemBus());
+
+        if (accountsInterface.isValid()) {
+            QDBusReply<QDBusObjectPath> userPath = accountsInterface.call("FindUserByName", m_selectedUser);
+            if (userPath.isValid()) {
+                QDBusInterface userInterface("org.freedesktop.Accounts",
+                                           userPath.value().path(),
+                                           "org.freedesktop.Accounts.User",
+                                           QDBusConnection::systemBus());
+
+                if (userInterface.isValid()) {
+                    QVariant uidVariant = userInterface.property("Uid");
+                    if (uidVariant.isValid()) {
+                        uid = uidVariant.toUInt();
+                        qDebug() << "UID do usuário" << m_selectedUser << ":" << uid;
+                    }
+                }
+            }
+        }
+
+        // Configurar integração com systemd-logind
+        QDBusInterface logindInterface("org.freedesktop.login1",
+                                      "/org/freedesktop/login1",
+                                      "org.freedesktop.login1.Manager",
+                                      QDBusConnection::systemBus());
+
+        if (logindInterface.isValid()) {
+            qDebug() << "Usando systemd-logind para gerenciamento de sessão";
+
+            // Configurar variáveis necessárias para systemd-logind
+            QString runtimeDir = QString("/run/user/%1").arg(uid);
+            qputenv("XDG_RUNTIME_DIR", runtimeDir.toUtf8());
+            qputenv("XDG_SESSION_TYPE", "x11");
+            qputenv("XDG_SESSION_CLASS", "user");
+            qputenv("XDG_SESSION_DESKTOP", sessionKey.toUtf8());
+            qputenv("XDG_SEAT", "seat0");
+            qputenv("DBUS_SESSION_BUS_ADDRESS", QString("unix:path=%1/bus").arg(runtimeDir).toUtf8());
+        } else {
+            qWarning() << "systemd-logind não disponível!";
+            // Configuração mínima caso o logind não esteja disponível
+            qputenv("XDG_RUNTIME_DIR", QString("/run/user/%1").arg(uid).toUtf8());
+            qputenv("DBUS_SESSION_BUS_ADDRESS", QString("unix:path=/run/user/%1/bus").arg(uid).toUtf8());
+        }
 
         // Garante que estamos desconectando do servidor X atual
         // para permitir que a sessão do usuário assuma o controle

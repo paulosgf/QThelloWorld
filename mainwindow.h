@@ -5,6 +5,9 @@
 #include <QLightDM/SessionsModel>
 #include <QLightDM/UsersModel>
 #include <QMainWindow>
+#include <QDBusInterface>
+#include <QDBusObjectPath>
+#include <QDBusReply>
 
 namespace Ui {
 class MainWindow;
