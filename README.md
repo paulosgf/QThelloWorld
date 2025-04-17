@@ -17,6 +17,7 @@ Type=Application
 - Configure default theme
 
 cat /etc/lightdm/lightdm.conf
+[Seat:*]
 greeter-session=lightdmTheme
 user-session=mate
 greeter-wrapper=/etc/lightdm/Xgreeter
