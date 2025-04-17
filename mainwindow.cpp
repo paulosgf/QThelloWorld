@@ -1,13 +1,12 @@
 #include "mainwindow.h"
+#include <QDBusConnection>
 #include <QDebug>
 #include <QIcon>
 #include <QPropertyAnimation>
 #include <QSizePolicy>
-#include "ui_mainwindow.h"
 #include <QTimer>
-#include <QDBusConnection>
+#include "ui_mainwindow.h"
 #define LIGHTDM_DEBUG 1
-
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -19,12 +18,12 @@ MainWindow::MainWindow(QWidget *parent)
     qputenv("LIGHTDM_TEST_MODE", "1");
 
     // Conexão dos sinais
-    connect(&m_greeter, &QLightDM::Greeter::showPrompt,
-            this, &MainWindow::onShowPrompt);
-    connect(&m_greeter, &QLightDM::Greeter::showMessage,
-            this, &MainWindow::onShowMessage);
-    connect(&m_greeter, &QLightDM::Greeter::authenticationComplete,
-            this, &MainWindow::onAuthenticationComplete);
+    connect(&m_greeter, &QLightDM::Greeter::showPrompt, this, &MainWindow::onShowPrompt);
+    connect(&m_greeter, &QLightDM::Greeter::showMessage, this, &MainWindow::onShowMessage);
+    connect(&m_greeter,
+            &QLightDM::Greeter::authenticationComplete,
+            this,
+            &MainWindow::onAuthenticationComplete);
     // Conexão corrigida para o checkbox
     connect(ui->showPasswordCheck, &QCheckBox::toggled, [this](bool checked) {
         ui->passwordField->setEchoMode(checked ? QLineEdit::Normal : QLineEdit::Password);
@@ -67,7 +66,7 @@ void MainWindow::connectToLightDM()
 
     // Tenta conexão periodicamente
     QTimer connectTimer;
-    connect(&connectTimer, &QTimer::timeout, [this](){
+    connect(&connectTimer, &QTimer::timeout, [this]() {
         if (m_greeter.connectSync()) {
             m_connected = true;
             qDebug() << "Conectado ao LightDM!";
@@ -124,17 +123,18 @@ void MainWindow::onAuthenticationComplete()
         // Obtém o UID do usuário autenticado
         uid_t uid = 1000; // Default para usuário regular
         QDBusInterface accountsInterface("org.freedesktop.Accounts",
-                                        "/org/freedesktop/Accounts",
-                                        "org.freedesktop.Accounts",
-                                        QDBusConnection::systemBus());
+                                         "/org/freedesktop/Accounts",
+                                         "org.freedesktop.Accounts",
+                                         QDBusConnection::systemBus());
 
         if (accountsInterface.isValid()) {
-            QDBusReply<QDBusObjectPath> userPath = accountsInterface.call("FindUserByName", m_selectedUser);
+            QDBusReply<QDBusObjectPath> userPath = accountsInterface.call("FindUserByName",
+                                                                          m_selectedUser);
             if (userPath.isValid()) {
                 QDBusInterface userInterface("org.freedesktop.Accounts",
-                                           userPath.value().path(),
-                                           "org.freedesktop.Accounts.User",
-                                           QDBusConnection::systemBus());
+                                             userPath.value().path(),
+                                             "org.freedesktop.Accounts.User",
+                                             QDBusConnection::systemBus());
 
                 if (userInterface.isValid()) {
                     QVariant uidVariant = userInterface.property("Uid");
@@ -148,9 +148,9 @@ void MainWindow::onAuthenticationComplete()
 
         // Configurar integração com systemd-logind
         QDBusInterface logindInterface("org.freedesktop.login1",
-                                      "/org/freedesktop/login1",
-                                      "org.freedesktop.login1.Manager",
-                                      QDBusConnection::systemBus());
+                                       "/org/freedesktop/login1",
+                                       "org.freedesktop.login1.Manager",
+                                       QDBusConnection::systemBus());
 
         if (logindInterface.isValid()) {
             qDebug() << "Usando systemd-logind para gerenciamento de sessão";
@@ -162,12 +162,14 @@ void MainWindow::onAuthenticationComplete()
             qputenv("XDG_SESSION_CLASS", "user");
             qputenv("XDG_SESSION_DESKTOP", sessionKey.toUtf8());
             qputenv("XDG_SEAT", "seat0");
-            qputenv("DBUS_SESSION_BUS_ADDRESS", QString("unix:path=%1/bus").arg(runtimeDir).toUtf8());
+            qputenv("DBUS_SESSION_BUS_ADDRESS",
+                    QString("unix:path=%1/bus").arg(runtimeDir).toUtf8());
         } else {
             qWarning() << "systemd-logind não disponível!";
             // Configuração mínima caso o logind não esteja disponível
             qputenv("XDG_RUNTIME_DIR", QString("/run/user/%1").arg(uid).toUtf8());
-            qputenv("DBUS_SESSION_BUS_ADDRESS", QString("unix:path=/run/user/%1/bus").arg(uid).toUtf8());
+            qputenv("DBUS_SESSION_BUS_ADDRESS",
+                    QString("unix:path=/run/user/%1/bus").arg(uid).toUtf8());
         }
 
         // Garante que estamos desconectando do servidor X atual
@@ -314,8 +316,5 @@ void MainWindow::authenticateUser()
 
     qDebug() << "Iniciando autenticação para usuário:" << m_selectedUser;
     m_greeter.authenticate(m_selectedUser);
-   m_greeter.authenticate(m_selectedUser);
+    m_greeter.authenticate(m_selectedUser);
 }
-
-
-
