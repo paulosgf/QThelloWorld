@@ -57,7 +57,8 @@ int main(int argc, char *argv[])
             font-size: 14px;
             margin-top: 15px;
         }
-    )").arg(0.6); // <- valor da opacidade
+    )")
+                        .arg(0.6); // <- valor da opacidade
 
     window.setStyleSheet(style);
 

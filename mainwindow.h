@@ -1,13 +1,13 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QDBusInterface>
+#include <QDBusObjectPath>
+#include <QDBusReply>
 #include <QLightDM/Greeter>
 #include <QLightDM/SessionsModel>
 #include <QLightDM/UsersModel>
 #include <QMainWindow>
-#include <QDBusInterface>
-#include <QDBusObjectPath>
-#include <QDBusReply>
 
 namespace Ui {
 class MainWindow;
